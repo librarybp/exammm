@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Rooms{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="toolbar"><h2 style="margin:0;flex:1">Exam Rooms <span class="muted small">— total active capacity: {{ total }}</span></h2>
+    <a class="btn s" href="{{ url_for('room_form') }}">+ Add Room</a></div>
+  {% if rooms %}
+  <table class="t">
+    <tr><th>Room No</th><th>Building / Floor</th><th>Layout (rows × cols)</th><th>Capacity</th><th>Gap seating cap.</th><th>Flags</th><th>Remarks</th><th></th></tr>
+    {% for r in rooms %}
+    <tr>
+      <td><b>{{ r.room_no }}</b></td><td>{{ r.building }}{% if r.floor %} / {{ r.floor }}{% endif %}</td>
+      <td>{{ r.rows }} × {{ r.cols }}</td><td>{{ r.capacity }}</td>
+      <td class="muted">~{{ ((r.cols + 1) // 2) * r.rows if r.capacity == r.rows * r.cols else '≤ ' ~ r.capacity }}</td>
+      <td>{% if r.active %}<span class="badge ok">Active</span>{% else %}<span class="badge">Inactive</span>{% endif %}
+          {% if r.accessible %}<span class="badge pwd">Accessible</span>{% endif %}</td>
+      <td class="small">{{ r.remarks }}</td>
+      <td style="white-space:nowrap">
+        <a class="btn sm o" href="{{ url_for('room_form', rid=r.id) }}">Edit</a>
+        <form method="post" action="{{ url_for('room_delete', rid=r.id) }}" style="display:inline" onsubmit="return confirmGo('Delete room {{ r.room_no }}? It will be removed from all exam plans.')">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn sm r">Delete</button></form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="muted">No rooms added yet.</p>{% endif %}
+</div>
+{% endblock %}

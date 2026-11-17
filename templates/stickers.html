@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Desk Stickers — {{ exam.title }}{% endblock %}
+{% block content %}
+<div class="toolbar noprint">
+  <a class="btn o" href="{{ url_for('exam_view', eid=exam.id) }}">← Back</a>
+  <button class="btn s" onclick="window.print()">Print Stickers</button>
+  <span class="small muted">Cut along dashed lines and paste on desks.</span>
+</div>
+{% for d in data %}
+<div class="page">
+  <div class="stickers">
+    {% for a in d.allocs %}
+    <div class="sticker">
+      <div class="inst">{{ S.institute_name }}</div>
+      <div class="meta">{{ exam.title }} · {{ exam.exam_date|dmy }} {{ exam.session }}</div>
+      <b>{{ a.roll_no }}</b>
+      <div class="meta">{{ a.branch }}{{ ' Sem ' ~ a.semester if a.semester }} · Room <b>{{ d.room.room_no }}</b> · Seat <b>{{ a.seat_no }}</b> ({{ seat_label(a.r, a.c) }})</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

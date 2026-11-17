@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Students{% endblock %}
+{% block content %}
+<datalist id="dl-branch">{% for b in branches %}<option value="{{ b }}">{% endfor %}</datalist>
+<datalist id="dl-sem">{% for s in semesters %}<option value="{{ s }}">{% endfor %}</datalist>
+
+<div class="grid">
+  <div class="col card">
+    <h2>Add roll numbers by range</h2>
+    <form method="post" action="{{ url_for('student_bulk') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="inline">
+        <div><label>Prefix</label><input type="text" name="prefix" id="bp" placeholder="BP23CE" oninput="preview()"></div>
+        <div><label>Start no.</label><input type="number" name="start" id="bs" min="0" required oninput="preview()"></div>
+        <div><label>End no.</label><input type="number" name="end" id="be" min="0" required oninput="preview()"></div>
+      </div>
+      <div class="inline">
+        <div><label>Digits (zero-pad)</label><input type="number" name="pad" id="bd" min="0" max="10" value="3" oninput="preview()"></div>
+        <div><label>Suffix</label><input type="text" name="suffix" id="bx" oninput="preview()"></div>
+        <div><label>Branch *</label><input type="text" name="branch" list="dl-branch" required></div>
+        <div><label>Semester</label><input type="text" name="semester" list="dl-sem"></div>
+      </div>
+      <p class="small muted" id="bprev">Example: prefix BP23CE, 1 to 60, 3 digits → BP23CE001 … BP23CE060</p>
+      <button class="btn">Add Range</button>
+    </form>
+  </div>
+  <div class="col card">
+    <h2>Import from CSV / Excel</h2>
+    <form method="post" action="{{ url_for('student_import') }}" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <label>CSV file (columns: roll_no, name, branch, semester, pwd)</label>
+      <input type="file" name="csvfile" accept=".csv" required>
+      <label class="chk"><input type="checkbox" name="update"> Update existing roll numbers</label>
+      <p><button class="btn">Import</button> <a class="btn o" href="{{ url_for('student_template') }}">Download template</a></p>
+      <p class="small muted">From Excel: File → Save As → <b>CSV UTF-8</b>. Assamese names are supported. pwd = 1 for PwD/Divyang candidates.</p>
+    </form>
+    <details><summary>Add single student</summary>
+      <form method="post" action="{{ url_for('student_add') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="inline">
+          <div><label>Roll no *</label><input type="text" name="roll_no" required></div>
+          <div><label>Name</label><input type="text" name="name"></div>
+        </div>
+        <div class="inline">
+          <div><label>Branch *</label><input type="text" name="branch" list="dl-branch" required></div>
+          <div><label>Semester</label><input type="text" name="semester" list="dl-sem"></div>
+        </div>
+        <label class="chk"><input type="checkbox" name="pwd"> PwD / needs accessible seat</label>
+        <p><button class="btn">Add</button></p>
+      </form>
+    </details>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Student list <span class="muted small">({{ students|length }} shown)</span></h2>
+  <form method="get" class="inline noprint" style="margin-bottom:10px">
+    <div><label>Branch</label><select name="branch"><option value="">All</option>{% for b in branches %}<option {{ 'selected' if f.branch==b }}>{{ b }}</option>{% endfor %}</select></div>
+    <div><label>Semester</label><select name="semester"><option value="">All</option>{% for s in semesters %}<option {{ 'selected' if f.semester==s }}>{{ s }}</option>{% endfor %}</select></div>
+    <div><label>Search roll / name</label><input type="text" name="q" value="{{ f.q }}"></div>
+    <div style="flex:0 0 auto"><button class="btn">Filter</button> <a class="btn o" href="{{ url_for('students') }}">Reset</a></div>
+  </form>
+  <form method="post" action="{{ url_for('student_delete') }}" id="delform">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="branch" value="{{ f.branch }}"><input type="hidden" name="semester" value="{{ f.semester }}">
+    <div class="toolbar">
+      <button class="btn sm r" name="scope" value="selected" onclick="return confirmGo('Delete selected students?')">Delete selected</button>
+      {% if f.branch %}<button class="btn sm r" name="scope" value="filter" onclick="return confirmGo('Delete ALL students of {{ f.branch }}{{ ' Sem ' ~ f.semester if f.semester }}?')">Delete all {{ f.branch }}{{ ' Sem ' ~ f.semester if f.semester }}</button>{% endif %}
+    </div>
+    {% if students %}
+    <table class="t">
+      <tr><th style="width:28px"><input type="checkbox" onclick="toggleAll(this,'ids')"></th><th>Roll No</th><th>Name</th><th>Branch</th><th>Semester</th><th>PwD</th><th></th></tr>
+      {% for s in students %}
+      <tr><td><input type="checkbox" name="ids" value="{{ s.id }}"></td><td><b>{{ s.roll_no }}</b></td><td>{{ s.name }}</td>
+        <td>{{ s.branch }}</td><td>{{ s.semester }}</td><td>{% if s.pwd %}<span class="badge pwd">PwD</span>{% endif %}</td>
+        <td><a class="btn sm o" href="{{ url_for('student_edit', sid=s.id) }}">Edit</a></td></tr>
+      {% endfor %}
+    </table>
+    {% else %}<p class="muted">No students found.</p>{% endif %}
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function pad(n, w){ var s = String(n); while (s.length < w) { s = '0' + s; } return s; }
+function preview(){
+  var p = document.getElementById('bp').value.toUpperCase(), x = document.getElementById('bx').value.toUpperCase();
+  var s = parseInt(document.getElementById('bs').value, 10), e = parseInt(document.getElementById('be').value, 10);
+  var d = parseInt(document.getElementById('bd').value, 10) || 0, el = document.getElementById('bprev');
+  if (isNaN(s) || isNaN(e)) { return; }
+  if (e < s) { el.innerHTML = '<span style="color:#b91c1c">End must be ≥ start</span>'; return; }
+  el.innerHTML = 'Will create <b>' + (e - s + 1) + '</b> roll numbers: <b>' + p + pad(s, d) + x + '</b> … <b>' + p + pad(e, d) + x + '</b>';
+}
+</script>
+{% endblock %}

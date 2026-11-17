@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Notice — {{ exam.title }}{% endblock %}
+{% block content %}
+<div class="toolbar noprint">
+  <a class="btn o" href="{{ url_for('exam_view', eid=exam.id) }}">← Back</a>
+  <button class="btn s" onclick="window.print()">Print</button>
+</div>
+
+<div class="page">
+  {% include '_print_head.html' %}
+  <h3 style="text-align:center;margin:8px 0">SEATING ARRANGEMENT — BRANCH-WISE (Notice Board)</h3>
+  <table class="t">
+    <tr><th>Branch / Semester / Paper</th><th>Room</th><th>Building</th><th>Roll numbers</th><th>Count</th></tr>
+    {% for b in branch_wise %}
+      {% for it in b.entries %}
+      <tr>
+        {% if loop.first %}<td rowspan="{{ b.entries|length }}"><b>{{ b.label }}</b><br><span class="small muted">Total {{ b.total }}</span></td>{% endif %}
+        <td><b>{{ it.room.room_no }}</b></td><td>{{ it.room.building }} {{ it.room.floor }}</td>
+        <td>{{ it.ranges|join(', ') }}</td><td>{{ it.count }}</td>
+      </tr>
+      {% endfor %}
+    {% endfor %}
+  </table>
+  {% if exam.instructions %}<p><b>Instructions:</b> {{ exam.instructions }}</p>{% endif %}
+  <div class="sign"><div style="visibility:hidden"></div><div>{{ S.signatory }}</div></div>
+</div>
+
+{% for d in data %}
+<div class="page">
+  {% include '_print_head.html' %}
+  <div style="text-align:center;border:3px solid #0b2a5b;padding:10px;margin:10px 0">
+    <div style="font-size:14px">EXAMINATION HALL</div>
+    <div style="font-size:40px;font-weight:700;color:#0b2a5b">{{ d.room.room_no }}</div>
+    <div>{{ d.room.building }} {{ d.room.floor }} · Candidates: <b>{{ d.allocs|length }}</b></div>
+  </div>
+  <table class="t">
+    <tr><th>Branch / Semester / Paper</th><th>Roll numbers</th><th>Count</th></tr>
+    {% for sm in d.summary %}<tr><td><b>{{ sm.label }}</b></td><td style="font-size:14px">{{ sm.ranges|join(', ') }}</td><td>{{ sm.count }}</td></tr>{% endfor %}
+  </table>
+  {% if exam.instructions %}<p><b>Instructions:</b> {{ exam.instructions }}</p>{% endif %}
+</div>
+{% endfor %}
+{% endblock %}

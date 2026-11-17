@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if room else 'Add' }} Room{% endblock %}
+{% block content %}
+{% set f = request.form if request.method == 'POST' else (room or {}) %}
+<div class="card" style="max-width:720px">
+  <h2>{{ 'Edit Room ' ~ room.room_no if room else 'Add Room' }}</h2>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="inline">
+      <div><label>Room number *</label><input type="text" name="room_no" value="{{ f.room_no or '' }}" required placeholder="e.g. R-101"></div>
+      <div><label>Building / Block</label><input type="text" name="building" value="{{ f.building or '' }}" placeholder="e.g. Main Block"></div>
+      <div><label>Floor</label><input type="text" name="floor" value="{{ f.floor or '' }}" placeholder="Ground / First"></div>
+    </div>
+    <div class="inline">
+      <div><label>Rows (benches front → back) *</label><input type="number" min="1" max="60" id="rows" name="rows" value="{{ f.rows or '' }}" required oninput="calc()"></div>
+      <div><label>Columns (seats across) *</label><input type="number" min="1" max="30" id="cols" name="cols" value="{{ f.cols or '' }}" required oninput="calc()"></div>
+      <div><label>Seat capacity <span class="muted">(blank = rows × cols)</span></label><input type="number" min="1" id="capacity" name="capacity" value="{{ f.capacity or '' }}" oninput="calc()"></div>
+    </div>
+    <p class="small muted" id="calc"></p>
+    <label class="chk"><input type="checkbox" name="active" {{ 'checked' if (not room and request.method != 'POST') or f.active }}> Active (available for exams)</label>
+    <label class="chk"><input type="checkbox" name="accessible" {{ 'checked' if f.accessible }}> Accessible room (ground floor / ramp — PwD students are seated here first)</label>
+    <label>Remarks</label><input type="text" name="remarks" value="{{ f.remarks or '' }}" placeholder="e.g. CCTV, projector, lab benches">
+    <p><button class="btn" type="submit">Save Room</button> <a class="btn o" href="{{ url_for('rooms') }}">Cancel</a></p>
+  </form>
+  <p class="small muted">Tip: think of <b>columns</b> as seat positions across the room. A room with 6 benches per row, 2 students per bench, has 12 columns. Capacity less than rows × cols leaves the last seats (back rows) unused.</p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function calc(){
+  var r = parseInt(document.getElementById('rows').value, 10) || 0;
+  var c = parseInt(document.getElementById('cols').value, 10) || 0;
+  var cap = parseInt(document.getElementById('capacity').value, 10) || (r * c);
+  var el = document.getElementById('calc');
+  if (r && c) {
+    el.innerHTML = 'Grid: ' + (r * c) + ' positions · Capacity: <b>' + cap + '</b>' + (cap > r * c ? ' <span style="color:#b91c1c">(exceeds grid!)</span>' : '') +
+      ' · With alternate-gap seating: ~' + (Math.ceil(c / 2) * r);
+  } else { el.innerHTML = ''; }
+}
+calc();
+</script>
+{% endblock %}

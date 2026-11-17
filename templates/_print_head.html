@@ -1,0 +1,6 @@
+<div class="print-head">
+  <h1>{{ S.institute_name }} <span style="font-weight:400">| {{ S.institute_name_as }}</span></h1>
+  <p>{{ S.address }} · {{ S.exam_cell }}</p>
+  <h2>{{ exam.title }}</h2>
+  <p>Date: <b>{{ exam.exam_date|dmy }}</b> &nbsp; Session: <b>{{ exam.session }}</b>{% if exam.time_slot %} &nbsp; Time: <b>{{ exam.time_slot }}</b>{% endif %}</p>
+</div>

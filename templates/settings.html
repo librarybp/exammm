@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+{% set labels = {'institute_name':'Institute name','institute_name_as':'Institute name (Assamese)','exam_cell':'Exam cell / department title','address':'Address','signatory':'Signatory designation (printed on sheets)'} %}
+<div class="grid">
+  <div class="col card">
+    <h2>Institute details (printed on all sheets)</h2>
+    <form method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      {% for k in keys %}<label>{{ labels[k] }}</label><input type="text" name="{{ k }}" value="{{ S[k] }}">{% endfor %}
+      <p><button class="btn">Save</button></p>
+    </form>
+  </div>
+  <div class="col card">
+    <h2>Change admin password</h2>
+    <form method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="action" value="password">
+      <label>Current password</label><input type="password" name="old_password" required>
+      <label>New password (min 8)</label><input type="password" name="new_password" required>
+      <label>Confirm new password</label><input type="password" name="confirm_password" required>
+      <p><button class="btn">Change Password</button></p>
+    </form>
+  </div>
+</div>
+{% endblock %}

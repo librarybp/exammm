@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="grid" style="margin-bottom:16px">
+  <div class="stat"><b>{{ stats.rooms }}</b><span>Active exam rooms</span></div>
+  <div class="stat"><b>{{ stats.seats }}</b><span>Total seat capacity</span></div>
+  <div class="stat"><b>{{ stats.students }}</b><span>Students registered</span></div>
+  <div class="stat"><b>{{ stats.exams }}</b><span>Exams / sessions</span></div>
+</div>
+<div class="grid">
+  <div class="col card">
+    <h2>Quick start</h2>
+    <ol style="margin:0;padding-left:18px;line-height:1.9">
+      <li><a href="{{ url_for('room_form') }}">Add rooms</a> with rows × columns and seat capacity</li>
+      <li><a href="{{ url_for('students') }}">Add students</a> — by roll range, CSV, or one by one</li>
+      <li><a href="{{ url_for('exam_form') }}">Create an exam session</a> — pick branches, semesters, rooms</li>
+      <li>Click <b>Generate Seat Plan</b>, then print seat chart, notice, attendance sheets &amp; desk stickers</li>
+    </ol>
+    <p><a class="btn s" href="{{ url_for('exam_form') }}">+ New Exam Seat Plan</a></p>
+  </div>
+  <div class="col card">
+    <h2>Students by branch / semester</h2>
+    {% if by_branch %}
+    <table class="t"><tr><th>Branch</th><th>Semester</th><th>Students</th></tr>
+      {% for b in by_branch %}<tr><td>{{ b.branch }}</td><td>{{ b.semester or '-' }}</td><td>{{ b.n }}</td></tr>{% endfor %}
+    </table>
+    {% else %}<p class="muted">No students yet.</p>{% endif %}
+  </div>
+</div>
+<div class="card">
+  <h2>Recent exams</h2>
+  {% if exams %}
+  <table class="t"><tr><th>Exam</th><th>Date</th><th>Session</th><th>Status</th><th></th></tr>
+    {% for e in exams %}<tr>
+      <td>{{ e.title }}</td><td>{{ e.exam_date|dmy }}</td><td>{{ e.session }}</td>
+      <td>{% if e.generated_at %}<span class="badge ok">Generated {{ e.generated_at }}</span>{% else %}<span class="badge">Draft</span>{% endif %}
+          {% if e.unallocated %}<span class="badge warn">{{ e.unallocated }} unseated</span>{% endif %}</td>
+      <td><a class="btn sm" href="{{ url_for('exam_view', eid=e.id) }}">Open</a></td></tr>{% endfor %}
+  </table>
+  {% else %}<p class="muted">No exams created yet.</p>{% endif %}
+</div>
+{% endblock %}

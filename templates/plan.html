@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Seat Chart — {{ exam.title }}{% endblock %}
+{% block content %}
+<div class="toolbar noprint">
+  <a class="btn o" href="{{ url_for('exam_view', eid=exam.id) }}">← Back</a>
+  <button class="btn s" onclick="window.print()">Print Seat Chart</button>
+  <span class="small muted">Tip: choose <b>Landscape</b> in the print dialog for wide rooms.</span>
+</div>
+{% for d in data %}
+<div class="page">
+  {% include '_print_head.html' %}
+  <div class="toolbar" style="justify-content:space-between">
+    <div><b style="font-size:16px">Room: {{ d.room.room_no }}</b> <span class="muted">{{ d.room.building }} {{ d.room.floor }}</span></div>
+    <div>Candidates: <b>{{ d.allocs|length }}</b>{% if d.room.invigilators %} · Invigilator(s): <b>{{ d.room.invigilators }}</b>{% endif %}</div>
+  </div>
+  <div class="board">▲ FRONT · BLACKBOARD / INVIGILATOR DESK ▲</div>
+  <table class="seat">
+    {% for line in d.grid %}<tr>
+      {% for cell in line %}
+        {% if cell.state == 'seat' %}
+        <td style="background:{{ cell.color }}"><span class="sn">{{ cell.a.seat_no }} · {{ cell.label }}</span><span class="rl">{{ cell.a.roll_no }}</span><span class="br">{{ cell.a.branch }}{{ ' S' ~ cell.a.semester if cell.a.semester }}{{ ' ♿' if cell.a.pwd }}</span></td>
+        {% elif cell.state == 'empty' %}<td class="empty">{{ cell.label }}</td>
+        {% else %}<td class="off">✕</td>{% endif %}
+      {% endfor %}</tr>
+    {% endfor %}
+  </table>
+  <div style="margin-top:10px">
+    <table class="t"><tr><th>Group</th><th>Count</th><th>Roll numbers</th></tr>
+      {% for sm in d.summary %}<tr><td><span class="swatch" style="background:{{ sm.color }}"></span>{{ sm.label }}</td><td>{{ sm.count }}</td><td class="small">{{ sm.ranges|join(', ') }}</td></tr>{% endfor %}
+    </table>
+  </div>
+  <div class="sign"><div>Invigilator</div><div>{{ S.signatory }}</div></div>
+</div>
+{% else %}<div class="card"><p class="muted">No seat plan generated.</p></div>
+{% endfor %}
+{% endblock %}

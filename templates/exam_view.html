@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}{{ exam.title }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="toolbar">
+    <h2 style="margin:0;flex:1">{{ exam.title }}</h2>
+    <a class="btn o sm" href="{{ url_for('exam_form', eid=exam.id) }}">Edit setup</a>
+  </div>
+  <p>Date: <b>{{ exam.exam_date|dmy or '-' }}</b> · Session: <b>{{ exam.session }}</b> {{ exam.time_slot }} ·
+     Arrangement: <b>{{ MODES[exam.mode].split(' —')[0] }}</b>{{ ' + gap seating' if exam.gap }}</p>
+
+  {% for c in conflicts %}<div class="flash error">Room <b>{{ c.room_no }}</b> is also used by “{{ c.title }}” in the same date &amp; session.</div>{% endfor %}
+
+  <div class="grid">
+    <div class="stat"><b>{{ need }}</b><span>Students to seat{% if excl_count %} ({{ excl_count }} excluded){% endif %}</span></div>
+    <div class="stat"><b>{{ have }}</b><span>Seats available in {{ room_info|length }} room(s)</span></div>
+    <div class="stat"><b style="color:{{ '#138808' if have >= need else '#b91c1c' }}">{{ have - need }}</b><span>{{ 'Spare seats' if have >= need else 'Seats SHORT — add rooms' }}</span></div>
+    {% if pwd_count %}<div class="stat"><b>{{ pwd_count }}</b><span>PwD candidates (front seats, accessible rooms)</span></div>{% endif %}
+  </div>
+
+  <div class="toolbar" style="margin-top:14px">
+    <form method="post" action="{{ url_for('exam_generate', eid=exam.id) }}" style="display:inline" {% if exam.generated_at %}onsubmit="return confirmGo('Regenerate? The current plan will be replaced.')"{% endif %}>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn g">{{ 'Regenerate' if exam.generated_at else 'Generate' }} Seat Plan</button>
+    </form>
+    {% if exam.generated_at %}
+      <span class="badge ok">Generated {{ exam.generated_at }}</span>
+      {% if exam.unallocated %}<span class="badge warn">{{ exam.unallocated }} students not seated</span>{% endif %}
+      <form method="post" action="{{ url_for('exam_clear', eid=exam.id) }}" style="display:inline" onsubmit="return confirmGo('Clear the seat plan?')">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn sm r">Clear</button></form>
+    {% endif %}
+  </div>
+  {% if exam.generated_at %}
+  <div class="toolbar">
+    <a class="btn s" href="{{ url_for('exam_plan', eid=exam.id) }}" target="_blank">Seat Chart (room grid)</a>
+    <a class="btn s" href="{{ url_for('exam_notice', eid=exam.id) }}" target="_blank">Notice Board / Door List</a>
+    <a class="btn s" href="{{ url_for('exam_attendance', eid=exam.id) }}" target="_blank">Attendance Sheets</a>
+    <a class="btn s" href="{{ url_for('exam_stickers', eid=exam.id) }}" target="_blank">Desk Stickers</a>
+    <a class="btn o" href="{{ url_for('exam_export', eid=exam.id) }}">Export CSV (Excel)</a>
+  </div>
+  {% endif %}
+</div>
+
+<div class="grid">
+  <div class="col card">
+    <h2>Groups appearing</h2>
+    <table class="t"><tr><th>Group</th><th>Students</th><th>Roll range</th></tr>
+      {% for q in queues %}
+      <tr><td><span class="swatch" style="background:{{ colors[loop.index0 % colors|length] }}"></span>{{ group_label(q.group) }}</td>
+        <td>{{ q.students|length }}{% if not q.students %} <span class="badge warn">none found</span>{% endif %}</td>
+        <td class="small">{% if q.students %}{{ q.students[0].roll_no }} – {{ q.students[-1].roll_no }}{% endif %}</td></tr>
+      {% endfor %}
+    </table>
+    <p class="small muted">If a group shows “none found”, check that its branch/semester exactly matches the student records.</p>
+  </div>
+  <div class="col card">
+    <h2>Rooms</h2>
+    <table class="t"><tr><th>#</th><th>Room</th><th>Seats</th><th>Used</th><th>Invigilators</th><th></th></tr>
+      {% for x in room_info %}
+      <tr><td>{{ loop.index }}</td><td><b>{{ x.room.room_no }}</b> <span class="small muted">{{ x.room.building }}</span>{% if x.room.accessible %} <span class="badge pwd">Acc.</span>{% endif %}</td>
+        <td>{{ x.seats }}</td><td>{{ x.used }}</td><td class="small">{{ x.room.invigilators }}</td>
+        <td>{% if x.used %}<a class="btn sm o" target="_blank" href="{{ url_for('exam_plan', eid=exam.id, room=x.room.id) }}">Chart</a>
+            <a class="btn sm o" target="_blank" href="{{ url_for('exam_attendance', eid=exam.id, room=x.room.id) }}">Attendance</a>{% endif %}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}

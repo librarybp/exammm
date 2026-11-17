@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Find My Seat{% endblock %}
+{% block content %}
+<div class="card" style="max-width:640px;margin:20px auto">
+  <h2>Find My Exam Seat <span class="muted small">/ মোৰ আসন বিচাৰক</span></h2>
+  <form method="get" class="inline">
+    <div style="flex:3 1 220px"><label>Roll number</label><input type="text" name="roll" value="{{ roll }}" required autofocus placeholder="e.g. BP23CE001"></div>
+    <div style="flex:0 0 auto"><button class="btn">Search</button></div>
+  </form>
+  {% if roll %}
+    {% if results %}
+    <p>Candidate: <b>{{ results[0].roll_no }}</b> {{ results[0].name }} · {{ results[0].branch }} {{ results[0].semester }}</p>
+    <table class="t">
+      <tr><th>Exam</th><th>Date / Session</th><th>Room</th><th>Seat</th></tr>
+      {% for r in results %}
+      <tr><td>{{ r.title }}</td><td>{{ r.exam_date|dmy }}<br><span class="small">{{ r.session }} {{ r.time_slot }}</span></td>
+        <td><b style="font-size:16px">{{ r.room_no }}</b><br><span class="small">{{ r.building }} {{ r.floor }}</span></td>
+        <td><b style="font-size:16px">{{ r.seat_no }}</b><br><span class="small">Row {{ seat_label(r.r, r.c)[0] }}, Position {{ r.c + 1 }}</span></td></tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div class="flash error">No seat allotment found for <b>{{ roll }}</b>. Contact the {{ S.exam_cell }}.</div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if exam else 'New' }} Exam{% endblock %}
+{% block content %}
+<datalist id="dl-branch">{% for b in branches %}<option value="{{ b }}">{% endfor %}</datalist>
+<datalist id="dl-sem">{% for s in semesters %}<option value="{{ s }}">{% endfor %}</datalist>
+<form method="post">
+<input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+<div class="card">
+  <h2>{{ 'Edit Exam' if exam else 'New Exam / Session' }}</h2>
+  <div class="inline">
+    <div style="flex:2 1 300px"><label>Exam title *</label><input type="text" name="title" required value="{{ exam.title if exam else '' }}" placeholder="e.g. Sessional Examination – Nov 2026"></div>
+    <div><label>Date</label><input type="date" name="exam_date" value="{{ exam.exam_date if exam else '' }}"></div>
+    <div><label>Session</label><select name="session">{% for s in sessions %}<option {{ 'selected' if exam and exam.session==s }}>{{ s }}</option>{% endfor %}</select></div>
+    <div><label>Time</label><input type="text" name="time_slot" value="{{ exam.time_slot if exam else '' }}" placeholder="10:00 AM – 1:00 PM"></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Who is appearing? <span class="muted small">— one row per branch / semester / paper</span></h2>
+  <table class="t" id="groups">
+    <tr><th>Branch *</th><th>Semester <span class="muted">(blank = all)</span></th><th>Subject / Paper</th><th style="width:60px"></th></tr>
+    {% set glist = groups if groups else [None] %}
+    {% for gr in glist %}
+    <tr>
+      <td><input type="text" name="group_branch" list="dl-branch" value="{{ gr.branch if gr else '' }}"></td>
+      <td><input type="text" name="group_sem" list="dl-sem" value="{{ gr.semester if gr else '' }}"></td>
+      <td><input type="text" name="group_subject" value="{{ gr.subject if gr else '' }}" placeholder="e.g. Engineering Mechanics"></td>
+      <td><button type="button" class="btn sm r" onclick="removeRow(this)">✕</button></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p><button type="button" class="btn sm s" onclick="addRow()">+ Add branch / semester</button></p>
+  <p class="small muted">Different branches (or different papers) are mixed so that neighbours write different papers. Add each group in the order you want them distributed.</p>
+</div>
+
+<div class="card">
+  <h2>Rooms to use</h2>
+  {% if rooms %}
+  <table class="t">
+    <tr><th style="width:28px"><input type="checkbox" onclick="toggleAll(this,'room_ids');sumCap()"></th><th>Room</th><th>Building</th><th>Layout</th><th>Capacity</th><th style="width:80px">Fill order</th><th>Invigilator(s)</th></tr>
+    {% for r in rooms %}{% set s = sel.get(r.id) %}
+    <tr>
+      <td><input type="checkbox" name="room_ids" value="{{ r.id }}" data-cap="{{ r.capacity }}" {{ 'checked' if s }} onclick="sumCap()"></td>
+      <td><b>{{ r.room_no }}</b> {% if r.accessible %}<span class="badge pwd">Accessible</span>{% endif %}</td>
+      <td>{{ r.building }} {{ r.floor }}</td><td>{{ r.rows }} × {{ r.cols }}</td><td>{{ r.capacity }}</td>
+      <td><input type="number" name="order_{{ r.id }}" value="{{ s.sort_order if s else loop.index }}" min="0"></td>
+      <td><input type="text" name="invig_{{ r.id }}" value="{{ s.invigilators if s else '' }}" placeholder="Names, comma separated"></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p>Selected capacity: <b id="capsum">0</b> seats</p>
+  {% else %}<p class="muted">No active rooms. <a href="{{ url_for('room_form') }}">Add rooms first</a>.</p>{% endif %}
+</div>
+
+<div class="card">
+  <h2>Arrangement options</h2>
+  {% for k, v in MODES.items() %}
+  <label class="chk" style="display:flex"><input type="radio" name="mode" value="{{ k }}" {{ 'checked' if (exam and exam.mode==k) or (not exam and k=='column') }}> {{ v }}</label>
+  {% endfor %}
+  <label class="chk" style="display:flex;margin-top:12px"><input type="checkbox" name="gap" {{ 'checked' if exam and exam.gap }}> Leave alternate columns empty (gap seating — halves capacity, best for single-branch exams)</label>
+  <label>Exclude roll numbers <span class="muted">(detained / not eligible / debarred — separate by comma, space or new line)</span></label>
+  <textarea name="exclude_rolls" placeholder="BP23CE007, BP23ME015">{{ exam.exclude_rolls if exam else '' }}</textarea>
+  <label>Instructions printed on notice &amp; attendance sheet</label>
+  <textarea name="instructions" placeholder="Candidates must carry admit card. Mobile phones are strictly prohibited.">{{ exam.instructions if exam else '' }}</textarea>
+  <p><button class="btn g">Save &amp; Continue</button> <a class="btn o" href="{{ url_for('exam_view', eid=exam.id) if exam else url_for('exams') }}">Cancel</a></p>
+  {% if exam and exam.generated_at %}<p class="small" style="color:#b91c1c">Saving changes clears the current seat plan; generate again afterwards.</p>{% endif %}
+</div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+function addRow(){
+  var t = document.getElementById('groups');
+  var src = t.rows[t.rows.length - 1];
+  var row = src.cloneNode(true);
+  var ins = row.getElementsByTagName('input');
+  for (var i = 0; i < ins.length; i++) { ins[i].value = ''; }
+  src.parentNode.appendChild(row);
+  ins[0].focus();
+}
+function removeRow(btn){
+  var tr = btn.parentNode.parentNode;
+  var t = document.getElementById('groups');
+  if (t.rows.length <= 2) {
+    var ins = tr.getElementsByTagName('input');
+    for (var i = 0; i < ins.length; i++) { ins[i].value = ''; }
+    return;
+  }
+  tr.parentNode.removeChild(tr);
+}
+function sumCap(){
+  var els = document.getElementsByName('room_ids'), n = 0;
+  for (var i = 0; i < els.length; i++) { if (els[i].checked) { n += parseInt(els[i].getAttribute('data-cap'), 10) || 0; } }
+  var el = document.getElementById('capsum'); if (el) { el.innerHTML = n; }
+}
+sumCap();
+</script>
+{% endblock %}

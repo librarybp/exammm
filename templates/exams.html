@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Exams{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="toolbar"><h2 style="margin:0;flex:1">Exams &amp; Seat Plans</h2><a class="btn s" href="{{ url_for('exam_form') }}">+ New Exam</a></div>
+  {% if exams %}
+  <table class="t">
+    <tr><th>Exam</th><th>Date</th><th>Session</th><th>Arrangement</th><th>Rooms</th><th>Seated</th><th>Status</th><th></th></tr>
+    {% for e in exams %}
+    <tr><td><b>{{ e.title }}</b></td><td>{{ e.exam_date|dmy }}</td><td>{{ e.session }} {{ e.time_slot }}</td>
+      <td class="small">{{ e.mode|capitalize }}{{ ' + gap' if e.gap }}</td><td>{{ e.nrooms }}</td><td>{{ e.allocated }}</td>
+      <td>{% if e.generated_at %}<span class="badge ok">Generated</span>{% else %}<span class="badge">Draft</span>{% endif %}
+          {% if e.unallocated %}<span class="badge warn">{{ e.unallocated }} unseated</span>{% endif %}</td>
+      <td style="white-space:nowrap"><a class="btn sm" href="{{ url_for('exam_view', eid=e.id) }}">Open</a>
+        <form method="post" action="{{ url_for('exam_duplicate', eid=e.id) }}" style="display:inline"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn sm o">Duplicate</button></form>
+        <form method="post" action="{{ url_for('exam_delete', eid=e.id) }}" style="display:inline" onsubmit="return confirmGo('Delete this exam and its seat plan?')"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn sm r">Delete</button></form></td></tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="muted">No exams yet. <a href="{{ url_for('exam_form') }}">Create one</a>.</p>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Admin Login{% endblock %}
+{% block content %}
+<div class="card" style="max-width:380px;margin:40px auto">
+  <h2>Admin Login</h2>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label>Username</label><input type="text" name="username" required autofocus>
+    <label>Password</label><input type="password" name="password" required>
+    <p><button class="btn" type="submit">Login</button></p>
+  </form>
+  <p class="small muted">Students can check their seat without login on <a href="{{ url_for('lookup') }}">Find My Seat</a>.</p>
+</div>
+{% endblock %}

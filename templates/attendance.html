@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Attendance — {{ exam.title }}{% endblock %}
+{% block content %}
+<div class="toolbar noprint">
+  <a class="btn o" href="{{ url_for('exam_view', eid=exam.id) }}">← Back</a>
+  <button class="btn s" onclick="window.print()">Print Attendance Sheets</button>
+</div>
+{% for d in data %}
+<div class="page">
+  {% include '_print_head.html' %}
+  <h3 style="text-align:center;margin:6px 0">ATTENDANCE SHEET — Room {{ d.room.room_no }} {{ d.room.building }}</h3>
+  {% if d.room.invigilators %}<p class="small">Invigilator(s): <b>{{ d.room.invigilators }}</b></p>{% endif %}
+  <table class="t">
+    <tr><th style="width:34px">Sl</th><th style="width:60px">Seat</th><th>Roll No</th><th>Name</th><th>Branch / Sem</th><th style="width:110px">Answer Booklet No.</th><th style="width:130px">Signature</th></tr>
+    {% for a in d.allocs %}
+    <tr style="height:30px"><td>{{ loop.index }}</td><td>{{ a.seat_no }} ({{ seat_label(a.r, a.c) }})</td><td><b>{{ a.roll_no }}</b></td>
+      <td>{{ a.name }}{{ ' (PwD)' if a.pwd }}</td><td>{{ a.branch }} {{ a.semester }}</td><td></td><td></td></tr>
+    {% endfor %}
+  </table>
+  <p style="margin-top:12px">Total: <b>{{ d.allocs|length }}</b> &nbsp;&nbsp; Present: ________ &nbsp;&nbsp; Absent: ________ &nbsp;&nbsp; Absent roll nos: ______________________________</p>
+  <div class="sign"><div>Signature of Invigilator</div><div>{{ S.signatory }}</div></div>
+</div>
+{% else %}<div class="card"><p class="muted">No seat plan generated.</p></div>
+{% endfor %}
+{% endblock %}

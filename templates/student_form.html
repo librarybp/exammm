@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Edit Student{% endblock %}
+{% block content %}
+<datalist id="dl-branch">{% for b in branches %}<option value="{{ b }}">{% endfor %}</datalist>
+<datalist id="dl-sem">{% for x in semesters %}<option value="{{ x }}">{% endfor %}</datalist>
+<div class="card" style="max-width:560px">
+  <h2>Edit Student</h2>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label>Roll no</label><input type="text" name="roll_no" value="{{ s.roll_no }}" required>
+    <label>Name</label><input type="text" name="name" value="{{ s.name }}">
+    <div class="inline">
+      <div><label>Branch</label><input type="text" name="branch" list="dl-branch" value="{{ s.branch }}" required></div>
+      <div><label>Semester</label><input type="text" name="semester" list="dl-sem" value="{{ s.semester }}"></div>
+    </div>
+    <label class="chk"><input type="checkbox" name="pwd" {{ 'checked' if s.pwd }}> PwD / needs accessible seat</label>
+    <p><button class="btn">Save</button> <a class="btn o" href="{{ url_for('students') }}">Cancel</a></p>
+  </form>
+</div>
+{% endblock %}

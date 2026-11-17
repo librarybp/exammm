@@ -1,0 +1,14 @@
+[Unit]
+Description=Exam Seat Plan (Gunicorn)
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/var/www/seatplan
+Environment="ADMIN_PASSWORD=ChangeMe@2026"
+ExecStart=/var/www/seatplan/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5012 wsgi:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
